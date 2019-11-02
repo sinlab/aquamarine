@@ -1,0 +1,96 @@
+https://gihyo.jp/admin/serial/01/ubuntu-recipe/0399
+
+ubuntu-mate-16.04.6-desktop-amd64.iso
+RTX2070
+
+★aptget_update&upgrade,dirname,hwclock
+	プロキシ
+	/etc/environmentに追加
+	http_proxy="http://hoge.jp:1234"
+	https_proxy="http://hoge.jp:1234"
+	HTTP_PROXY="http://hoge.jp:1234"
+	HTTPS_PROXY="http://hoge.jp:1234"
+
+	とりあえずアプデ
+	sudo apt update ; sudo apt upgrade
+
+	不足している言語パック適用（GUIから
+
+	自動更新停止
+	
+	フォルダ名英語化
+	LANG=C xdg-user-dirs-gtk-update
+
+	時刻合わせ
+	https://ubiqlog.com/archives/11842
+	sudo hwclock -D --systohc --localtime
+
+	timeshiftインストール
+	sudo add-apt-repository ppa:teejee2008/ppa
+	sudo apt-get update ; sudo apt-get install timeshift
+
+★samba
+	/etc/samba/smb.confを修正
+	global設定に
+		client use spnego = no
+	を追加
+	ワークグループ名の行を
+		workgroup = hogehoge
+	に修正する
+
+★buildessential
+	開発必需品的なモノ
+	sudo dpkg -i code_1.38.0-1567547996_amd64.deb 
+	sudo apt-get install build-essential cmake git pkg-config
+
+★nvidia410,cuda10.0,cudnn7.4.1
+	ドライバver410
+	sudo add-apt-repository ppa:graphics-drivers/ppa
+	sudo apt update
+	sudo apt-get install nvidia-410
+
+	CUDA10.0
+	sudo dpkg -i cuda-repo-ubuntu1604_10.0.130-1_amd64.deb
+	sudo apt-get update
+	sudo apt-get install cuda-toolkit-10-0
+	~/.bashrc 最後に以下を追加
+	export PATH=/usr/local/cuda-10.0/bin${PATH:+:${PATH}}
+	export LD_LIBRARY_PATH=/usr/local/cuda-10.0/lib64${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}
+
+	cudnn7.4.1
+	sudo dpkg -i libcudnn7_7.4.1.5-1+cuda10.0_amd64.deb
+	sudo dpkg -i libcudnn7-dev_7.4.1.5-1+cuda10.0_amd64.deb
+	sudo dpkg -i libcudnn7-doc_7.4.1.5-1+cuda10.0_amd64.deb
+
+★caffe
+	https://github.com/BVLC/caffe/wiki/Ubuntu-16.04-Installation-Guide
+	https://qiita.com/yoyoyo_/items/ed723a6e81c1f4046241	ここも参照
+		USE_CUDNN、CPU_ONLY、WITH_PYTHON_LAYER、hdf5について適用
+	依存ライブラリを先に入れる
+	sudo apt-get install -y libprotobuf-dev libleveldb-dev libsnappy-dev libhdf5-serial-dev protobuf-compiler libatlas-base-dev libboost-all-dev libgflags-dev libgoogle-glog-dev liblmdb-dev
+	sudo apt-get install -y python-pip python-dev python-numpy python-scipy python3-dev python3-numpy python3-scipy
+	sudo apt-get install -y libopencv-dev
+	ビルド
+	make all
+	make pycaffe
+	make test
+	make runtest
+	~/.bashrc 最後に以下を追加
+	export PYTHONPATH=~/caffe-master/python:${PYTHONPATH}
+	export PATH=~/caffe-master/build/tools${PATH:+:${PATH}}
+	python import caffeで未解決があれば以下も入れる
+	sudo apt-get install python-skimage python3-skimage python-protobuf
+
+★openpose
+	git clone https://github.com/CMU-Perceptual-Computing-Lab/openpose.git
+	cmake .
+	make
+	sudo make install
+	サンプル動作確認。ググるとCUDA8じゃないと動かないとあるが、普通に動いた
+	というかRTX20系ならCUDA10以降じゃないと動かないのでこうするしかない
+	内部でCaffeを使用しており、make installで/usr/local/libに入ってしまうのですでに入れているCaffeと競合大丈夫？
+	./examples/openpose/openpose.bin --video ./examples/media/video.avi
+
+
+
+
