@@ -9,6 +9,7 @@ private:
 	std::string mRuntime;
 	int mMscVerVal;
 	std::string mMscVer;
+	std::string mEnableAvx;
 
 public:
 	AppInfo() {
@@ -28,6 +29,17 @@ public:
 		mRuntime = "Multi Thread DLL";
 #else
 		mRuntime = "Multi Thread";
+#endif
+
+		mEnableAvx = "None";
+#ifdef __AVX__
+		mEnableAvx = "AVX";
+#endif
+#ifdef __AVX2__
+		mEnableAvx = "AVX2";
+#endif
+#ifdef __AVX512F__
+		mEnableAvx = "AVX512F";
 #endif
 
 		{
@@ -53,6 +65,6 @@ public:
 	}
 
 	std::string GetInfoStr() const {
-		return (mMscVer + ", " + mRuntime + ", " + mBuild + ", " + mPlatform);
+		return (mMscVer + ", " + mRuntime + ", " + mBuild + ", " + mPlatform + ", " + mEnableAvx);
 	}
 };
