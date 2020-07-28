@@ -6,10 +6,9 @@
 #include "CpuInfo.h"
 #include "Clock.h"
 
-#define CLIP(v) (v)//((v<0?0:(255<v?255:v)))
+#define CLIP(v) ((v<0?0:(255<v?255:v)))
 
-#include <xmmintrin.h>	// SSE
-//#include <immintrin.h>	// AVX2
+#include <immintrin.h>	// AVX2
 
 int main(int argc, char* argv[]) {
 
@@ -24,12 +23,12 @@ int main(int argc, char* argv[]) {
 	static const int H = 1080;
 	static const int PIX = CH * W * H;
 
-	const int32_t gain_nu = 2, gain_de = 10;
-	const float gain = (float)gain_nu / (float)gain_de;
-	const int32_t offset = 10;
-	const __m128i gain_nu128 = _mm_setr_epi32(gain_nu, gain_nu, gain_nu, gain_nu);
-	const __m128i gain_de128 = _mm_setr_epi32(gain_de, gain_de, gain_de, gain_de);
-	const __m128i offset128 = _mm_setr_epi32(offset, offset, offset, offset);
+	const int16_t PARA = 4;
+	const int16_t gain_nu = 2, gain_de = 10;
+	const int16_t offset = 10;
+	const __m256i gain_nu256 = _mm256_set1_epi16(gain_nu);
+	const __m256i gain_de256 = _mm256_set1_epi16(gain_de);
+	const __m256i offset256 = _mm256_set1_epi16(offset);
 
 	uint8_t* pixels = new uint8_t[PIX];
 
@@ -43,29 +42,50 @@ int main(int argc, char* argv[]) {
 			Clock clock;
 			clock.Begin();
 			for (int y = 0; y < H; ++y) {
-				for (int x = 0; x < W; ++x) {
-					uint8_t* p = &pixels[y * W * CH + x * CH];
+				for (int x = 0; x < (W/PARA); ++x) {
+					uint8_t* p = &pixels[y * (W / PARA) * CH * PARA + x * CH * PARA];
 #if 0
-#if 0
-					// ゲインかけてオフセット。素直な実装
-					p[0] = CLIP(p[0] * gain + offset);
-					p[1] = CLIP(p[1] * gain + offset);
-					p[2] = CLIP(p[2] * gain + offset);
-					p[3] = CLIP(p[3] * gain + offset);
-#else
 					// ゲインかけてオフセット。gainを分子分母に分けてfloat演算除去
 					p[0] = CLIP((p[0] * gain_nu) / gain_de + offset);
 					p[1] = CLIP((p[1] * gain_nu) / gain_de + offset);
 					p[2] = CLIP((p[2] * gain_nu) / gain_de + offset);
 					p[3] = CLIP((p[3] * gain_nu) / gain_de + offset);
-#endif
+
+					p[4] = CLIP((p[4] * gain_nu) / gain_de + offset);
+					p[5] = CLIP((p[5] * gain_nu) / gain_de + offset);
+					p[6] = CLIP((p[6] * gain_nu) / gain_de + offset);
+					p[7] = CLIP((p[7] * gain_nu) / gain_de + offset);
+
+					p[8] = CLIP((p[8] * gain_nu) / gain_de + offset);
+					p[9] = CLIP((p[9] * gain_nu) / gain_de + offset);
+					p[10] = CLIP((p[10] * gain_nu) / gain_de + offset);
+					p[11] = CLIP((p[11] * gain_nu) / gain_de + offset);
+
+					p[12] = CLIP((p[12] * gain_nu) / gain_de + offset);
+					p[13] = CLIP((p[13] * gain_nu) / gain_de + offset);
+					p[14] = CLIP((p[14] * gain_nu) / gain_de + offset);
+					p[15] = CLIP((p[15] * gain_nu) / gain_de + offset);
 #else
-					// 上記をSSEで実装。128/32bitで4並列。遅くなってしまう
-					__m128i ans =_mm_add_epi32(_mm_div_epi32(_mm_mullo_epi32(_mm_setr_epi32(p[0], p[1], p[2], p[3]), gain_nu128), gain_de128), offset128);
-					p[0] = CLIP(ans.m128i_i32[0]);
-					p[1] = CLIP(ans.m128i_i32[1]);
-					p[2] = CLIP(ans.m128i_i32[2]);
-					p[3] = CLIP(ans.m128i_i32[3]);
+					// 上記のAVX2実装。これでもまだ遅い
+					__m256i p256 = _mm256_set_epi16(p[0], p[1], p[2], p[3], p[4], p[5], p[6], p[7], p[8], p[9], p[10], p[11], p[12], p[13], p[14], p[15]);		
+					__m256i ans = _mm256_adds_epi16(_mm256_div_epi16(_mm256_mullo_epi16(p256, gain_nu256), gain_de256), offset256);
+
+					p[0] = CLIP(ans.m256i_i16[0]);
+					p[1] = CLIP(ans.m256i_i16[1]);
+					p[2] = CLIP(ans.m256i_i16[2]);
+					p[3] = CLIP(ans.m256i_i16[3]);
+					p[4] = CLIP(ans.m256i_i16[4]);
+					p[5] = CLIP(ans.m256i_i16[5]);
+					p[6] = CLIP(ans.m256i_i16[6]);
+					p[7] = CLIP(ans.m256i_i16[7]);
+					p[8] = CLIP(ans.m256i_i16[8]);
+					p[9] = CLIP(ans.m256i_i16[9]);
+					p[10] = CLIP(ans.m256i_i16[10]);
+					p[11] = CLIP(ans.m256i_i16[11]);
+					p[12] = CLIP(ans.m256i_i16[12]);
+					p[13] = CLIP(ans.m256i_i16[13]);
+					p[14] = CLIP(ans.m256i_i16[14]);
+					p[15] = CLIP(ans.m256i_i16[15]);
 #endif
 				}
 			}
