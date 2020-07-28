@@ -6,9 +6,67 @@
 #include "CpuInfo.h"
 #include "Clock.h"
 
+#include <immintrin.h>	// AVX2
+
 #define CLIP(v) ((v<0?0:(255<v?255:v)))
 
-#include <immintrin.h>	// AVX2
+#define MAT_SIZE 8
+#define MAT_HEIGHT	MAT_SIZE
+#define MAT_WIDTH	MAT_SIZE
+
+void mul(const float a[MAT_HEIGHT][MAT_WIDTH], const float b[MAT_HEIGHT][MAT_WIDTH], float c[MAT_HEIGHT][MAT_WIDTH]) {
+	for (uint8_t j = 0; j < MAT_HEIGHT; ++j) {
+		for (uint8_t i = 0; i < MAT_WIDTH; ++i) {
+			float sum = 0;
+			for (uint8_t k = 0; k < MAT_HEIGHT; ++k) {
+				sum += a[j][k] * b[k][i];
+			}
+			c[j][i] = sum;
+		}
+	}
+}
+
+void mulavx2(const float a[MAT_HEIGHT][MAT_WIDTH], const float b[MAT_HEIGHT][MAT_WIDTH], float c[MAT_HEIGHT][MAT_WIDTH]) {
+	for (uint8_t j = 0; j < MAT_HEIGHT; ++j) {
+		for (uint8_t i = 0; i < MAT_WIDTH; ++i) {
+			__m256 a256 = _mm256_load_ps(a[j]);
+			__m256 b256 = _mm256_set_ps(b[7][i], b[6][i], b[5][i], b[4][i], b[3][i], b[2][i], b[1][i], b[0][i]);
+			__m256 dp256 = _mm256_dp_ps(a256, b256, 255);
+			c[j][i] = dp256.m256_f32[0] + dp256.m256_f32[4];
+		}
+	}
+}
+
+void print(const float a[MAT_HEIGHT][MAT_WIDTH]) {
+	for (uint8_t j = 0; j < MAT_HEIGHT; ++j) {
+		for (uint8_t i = 0; i < MAT_WIDTH; ++i) {
+			printf("%lf, ", a[j][i]);
+		}
+		printf("\n");
+	}
+	printf("\n");
+}
+
+void tanni(float a[MAT_HEIGHT][MAT_WIDTH]) {
+	for (uint8_t j = 0; j < MAT_HEIGHT; ++j) {
+		for (uint8_t i = 0; i < MAT_WIDTH; ++i) {
+			if (j == i) {
+				a[j][i] = 1.0f;
+			}
+			else {
+				a[j][i] = 0.0f;
+			}
+		}
+	}
+}
+
+void all(float a[MAT_HEIGHT][MAT_WIDTH], float val) {
+	for (uint8_t j = 0; j < MAT_HEIGHT; ++j) {
+		for (uint8_t i = 0; i < MAT_WIDTH; ++i) {
+			a[j][i] = val;
+		}
+	}
+}
 
 int main(int argc, char* argv[]) {
 
@@ -17,6 +75,34 @@ int main(int argc, char* argv[]) {
 	CpuInfo cpuinfo;
 
 	printf("ParallelTest\n%s\n%s\n", appinfo.GetInfoStr().c_str(), cpuinfo.GetInfoStr().c_str());
+
+	// 8x8flaots—ñÏB‚±‚ê‚ÍAVX2‚ÌŒø‰Ê‚ ‚è
+	float a[MAT_HEIGHT][MAT_WIDTH] = { 0.0f };
+	float b[MAT_HEIGHT][MAT_WIDTH] = { 0.0f };
+	float c[MAT_HEIGHT][MAT_WIDTH] = { 0.0f };
+#if 1
+	all(a,1);
+	all(b,1);
+#else
+	tanni(a);
+	tanni(b);
+#endif
+	Clock clock;
+	clock.Begin();
+	for (int i = 0; i < 100; ++i) {
+		mul(a, b, c);
+	}
+	printf("Normal %lld[us]\n", clock.EndMicroSec());
+	print(c);
+
+	clock.Begin();
+	for (int i = 0; i < 100; ++i) {
+		mulavx2(a, b, c);
+	}
+	printf("AVX2 %lld[us]\n", clock.EndMicroSec());
+	print(c);
+
+	return 0;
 
 	static const int CH = 4;
 	static const int W = 1920;
