@@ -1,10 +1,13 @@
 #include <stdio.h>
 
 #if defined(_WIN32) || defined(_WIN64)
-#define PLATFORM "Windows"
+#define SIMD "Intel SSE/AVX"
 #include <intrin.h>
+#elif defined(__ARM_NEON)
+#define SIMD "ARM NEON"
+#include "sse2neon.h"	// https://github.com/DLTcollab/sse2neon
 #else
-#define PLATFORM "Other"
+#error Unknown platform!
 #endif
 
 #define print_array(_array) {for (int i = 0; i < sizeof(_array) / sizeof(_array[0]); ++i) { printf("%4d", _array[i]); }	printf("\n");}
@@ -85,7 +88,7 @@ void simple128bitSimdTest() {
 
 int main(int argc, char* argv[]) {
 
-	printf("Platform: %s\n", PLATFORM);
+	printf("SIMD: %s\n", SIMD);
 
 	simple128bitSimdTest();
 
