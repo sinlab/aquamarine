@@ -1,5 +1,6 @@
 #pragma once
 #include <intrin.h>	// __cpuid, __cpuidex
+#include <string>
 
 class CpuInfo {
 private:
@@ -31,28 +32,29 @@ private:
 		AVX512F_READY	= (1 << 16)
 	};
 
-public:
-	CpuInfo() {
-		// https://docs.microsoft.com/ja-jp/cpp/intrinsics/cpuid-cpuidex?view=vs-2019
-		// http://yamatyuu.net/computer/program/vc2013/extinstchk/index.html
-		int cpuInfo[4] = {0};
-
+	std::string InitCpuName() const {
 		// CPU情報（ベンダー、型番、動作周波数）取得
+		int cpuInfo[4] = { 0 };
 		__cpuid(cpuInfo, 0x80000000);
+		std::string name;
 		if (0x80000002 <= cpuInfo[0]) {
 			int cpuInfoV[3][4];
 			__cpuid(cpuInfoV[0], 0x80000002);
 			__cpuid(cpuInfoV[1], 0x80000003);
 			__cpuid(cpuInfoV[2], 0x80000004);
 			const char* p = (char*)cpuInfoV;
-			char temp[4 * 4 * 4] = {0};
+			char temp[4 * 4 * 4] = { 0 };
 			for (int n = 0; n < 4 * 4 * 3; n++) {
 				temp[n] = *p++;
 			}
-			mCpuName = temp;
+			name = temp;
 		}
+		return name;
+	}
 
+	void InitCpuSimdExtension() {
 		// 拡張命令対応情報取得
+		int cpuInfo[4] = { 0 };
 		__cpuid(cpuInfo, 0x00000000);
 		const int idMax = cpuInfo[0];	// EAX
 		if (1 <= idMax) {
@@ -74,21 +76,27 @@ public:
 			mAVX2 = cpuInfo[1] & AVX2_READY;
 			mAVX512F = cpuInfo[1] & AVX512F_READY;
 		}
+	 }
+
+public:
+	CpuInfo() {
+		// https://docs.microsoft.com/ja-jp/cpp/intrinsics/cpuid-cpuidex?view=vs-2019
+		// http://yamatyuu.net/computer/program/vc2013/extinstchk/index.html
+
+		mCpuName = InitCpuName();
+
+		InitCpuSimdExtension();		
 	}
 
-	std::string GetInfoStr() const {
-		std::string ok, ng;
-		(mMMX ? ok : ng) += "MMX, ";
-		(mSSE ? ok : ng) += "SSE, ";
-		(mSSE2 ? ok : ng) += "SSE2, ";
-		(mSSE3 ? ok : ng) += "SSE3, ";
-		(mSSSE3 ? ok : ng) += "SSSE3, ";
-		(mSSE41 ? ok : ng) += "SSE41, ";
-		(mSSE42 ? ok : ng) += "SSE42, ";
-		(mAVX ? ok : ng) += "AVX, ";
-		(mAVX2 ? ok : ng) += "AVX2, ";
-		(mAVX512F ? ok : ng) += "AVX512, ";
-
-		return (mCpuName + ", " + "Supported: " + ok + "Unsupported:" + ng);
-	}
+	std::string GetCpuName() const { return mCpuName; }
+	bool HasMMX() const { return mMMX; }
+	bool HasSSE() const { return mSSE; }
+	bool HasSSE2() const { return mSSE2; }
+	bool HasSSE3() const { return mSSE3; }
+	bool HasSSSE3() const { return mSSSE3; }
+	bool HasSSE41() const { return mSSE41; }
+	bool HasSSE42() const { return mSSE42; }
+	bool HasAVX() const { return mAVX; }
+	bool HasAVX2() const { return mAVX2; }
+	bool HasAVX512() const { return mAVX512F; }
 };

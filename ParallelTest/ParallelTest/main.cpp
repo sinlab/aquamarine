@@ -74,7 +74,19 @@ int main(int argc, char* argv[]) {
 
 	CpuInfo cpuinfo;
 
-	printf("ParallelTest\n%s\n%s\n", appinfo.GetInfoStr().c_str(), cpuinfo.GetInfoStr().c_str());
+	printf("ParallelTest\n");
+	printf("%s\n", appinfo.GetInfoStr().c_str());
+	printf("%s\n", cpuinfo.GetCpuName().c_str());
+	printf("%s\t : %s\n", "MMX", cpuinfo.HasMMX() ? "support" : "NOT support");
+	printf("%s\t : %s\n", "SSE", cpuinfo.HasSSE() ? "support" : "NOT support");
+	printf("%s\t : %s\n", "SSE2", cpuinfo.HasSSE2() ? "support" : "NOT support");
+	printf("%s\t : %s\n", "SSE3", cpuinfo.HasSSE3() ? "support" : "NOT support");
+	printf("%s\t : %s\n", "SSSE3", cpuinfo.HasSSSE3() ? "support" : "NOT support");
+	printf("%s\t : %s\n", "SSE41", cpuinfo.HasSSE41() ? "support" : "NOT support");
+	printf("%s\t : %s\n", "SSE42", cpuinfo.HasSSE42() ? "support" : "NOT support");
+	printf("%s\t : %s\n", "AVX", cpuinfo.HasAVX() ? "support" : "NOT support");
+	printf("%s\t : %s\n", "AVX2", cpuinfo.HasAVX2() ? "support" : "NOT support");
+	printf("%s\t : %s\n", "AVX512", cpuinfo.HasAVX512() ? "support" : "NOT support");
 
 	// 8x8flaotçsóÒêœÅBÇ±ÇÍÇÕAVX2ÇÃå¯â Ç†ÇË
 	float a[MAT_HEIGHT][MAT_WIDTH] = { 0.0f };
