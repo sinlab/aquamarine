@@ -94,3 +94,15 @@ int main(int argc, char* argv[]) {
 
 	return 0;
 }
+
+
+/**
+* Android Studioをインストール
+* SDKManagerからNDKとx86_64エミュレータイメージをインストール
+* NDKにある toolchains\llvm\prebuilt\windows-x86_64\bin\aarch64-linux-android30-clang でこのmain.cをビルドする。test.outとする
+* ADVManagerからx86_64のエミュレータを作る。ARMv8a（aarch64）としても動いてくれるらしい。エミュレータを起動
+* adb起動。「adb root」でroot権限を得ておく
+* 「adb push test.out /data/_data」で送る。_dataはroot権限得たあとに先にmkdirしておかないとだめかも
+* 「adb shell」でエミュレータに入る。/data/_data/test.out を chmod 777 で実行権限つける
+* 「./test.out」でNEON動作確認
+**/
